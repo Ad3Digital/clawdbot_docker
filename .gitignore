@@ -1,0 +1,19 @@
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Keep the example
+!.env.example
+
+# Session notes (contain personal data and secrets)
+MEMORIA_SESSAO.md
+
+# IDE / editor settings
+.claude/
+
+# Windows artifacts
+nul
+
+# CLIProxyAPI binaries (should not be in repo)
+%USERPROFILE%/

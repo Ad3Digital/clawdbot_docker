@@ -1,0 +1,20 @@
+services:
+  clawdbot:
+    build: .
+    container_name: clawdbot_sandbox
+    volumes:
+      # Map Clawdbot configuration (Linux path for container)
+      - ${USERPROFILE}/.clawdbot:/root/.clawdbot
+      # Map Gemini CLI credentials
+      - ${USERPROFILE}/.gemini:/root/.gemini
+      # Map a workspace directory (Create this locally if it doesn't exist)
+      - ./workspace:/root/clawd
+    env_file:
+      - .env
+    environment:
+      # Override workspace path to match container path
+      - CLAWDBOT_WORKSPACE=/root/clawd
+    ports:
+      - "18789:18789"
+    restart: unless-stopped
+    command: clawdbot gateway --bind lan
