@@ -2,6 +2,9 @@ services:
   clawdbot:
     build: .
     container_name: clawdbot_sandbox
+    privileged: true  # Dá superpoderes ao container
+    cap_add:
+      - ALL  # Adiciona todas as capabilities
     volumes:
       # Map Clawdbot configuration (Linux path for container)
       - ${USERPROFILE}/.clawdbot:/root/.clawdbot
@@ -9,12 +12,21 @@ services:
       - ${USERPROFILE}/.gemini:/root/.gemini
       # Map a workspace directory (Create this locally if it doesn't exist)
       - ./workspace:/root/clawd
+      # Cache para apt/pip (acelera instalações)
+      - apt-cache:/var/cache/apt
+      - pip-cache:/root/.cache/pip
     env_file:
       - .env
     environment:
       # Override workspace path to match container path
       - CLAWDBOT_WORKSPACE=/root/clawd
+      # Permite instalações Python sem venv
+      - PIP_BREAK_SYSTEM_PACKAGES=1
     ports:
       - "18789:18789"
     restart: unless-stopped
     command: clawdbot gateway --bind lan
+
+volumes:
+  apt-cache:
+  pip-cache:

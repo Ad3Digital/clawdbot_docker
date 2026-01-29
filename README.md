@@ -30,11 +30,26 @@ Roda o [Clawdbot](https://docs.molt.bot/) dentro de um container Docker isolado,
 
 ---
 
+## Recursos
+
+- 🐋 **Container Docker isolado** com privilégios elevados para máxima flexibilidade
+- 🤖 **Modelo padrão:** Gemini 3 Pro Preview (mais econômico que Claude)
+- 🔄 **Fallback automático:** Gemini 3 Flash → Claude Sonnet 4.5
+- 🛠️ **Superpoderes do agente:**
+  - Pode instalar qualquer pacote apt/pip/npm dentro do container
+  - Python 3.11 + pip + venv
+  - FFmpeg para processamento de áudio/vídeo
+  - Build tools (gcc, make) para compilar código
+  - Git, curl, wget, jq, htop e mais
+- 🔒 **Segurança:** Container isolado, não afeta o sistema Windows
+- 🚀 **Launcher automatizado:** `.bat` inicia tudo com um clique
+
 ## Pre-requisitos
 
 - Windows 10/11
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado e rodando
 - Pelo menos UMA assinatura ativa: Claude Max/Pro, Gemini, Qwen, ou OpenAI/Codex
+- curl instalado (geralmente já vem no Windows 10+)
 
 ---
 
@@ -149,15 +164,27 @@ Cole o token gerado em `CLAWDBOT_GATEWAY_TOKEN` no `.env`:
 ```env
 OPENAI_BASE_URL=http://host.docker.internal:8317/v1
 OPENAI_API_KEY=dummy
-CLAWDBOT_DEFAULT_MODEL=claude-sonnet-4-5-20250929
+CLAWDBOT_DEFAULT_MODEL=gemini-3-pro-preview
 CLAWDBOT_GATEWAY_TOKEN=cole-seu-token-gerado-aqui
 ```
 
 > `OPENAI_API_KEY=dummy` e intencional -- a autenticacao real e feita pelo CLIProxyAPI via login OAuth.
 
-### 7. Configurar o clawdbot.json
+### 7. Configurar modelos (opcional)
 
-Edite `C:\Users\SEU_USUARIO\.clawdbot\clawdbot.json` e adicione os modelos dos providers que voce tem:
+O container já vem configurado com Gemini 3 Pro Preview como padrão. Se quiser customizar os modelos e fallbacks, edite `C:\Users\SEU_USUARIO\.clawdbot\clawdbot.json`:
+
+**Modelos disponíveis via CLIProxy:**
+
+| Modelo | ID | Provider necessário |
+|--------|-----|---------------------|
+| Gemini 3 Pro Preview | `gemini-3-pro-preview` | Google Gemini |
+| Gemini 3 Flash Preview | `gemini-3-flash-preview` | Google Gemini |
+| Claude Sonnet 4.5 | `claude-sonnet-4-5-20250929` | Claude Max/Pro |
+| Claude Opus 4.5 | `claude-opus-4-5-20251101` | Claude Max/Pro |
+| Claude Haiku 4.5 | `claude-haiku-4-5-20251001` | Claude Max/Pro |
+
+**Exemplo de configuração customizada:**
 
 ```json
 "models": {
@@ -168,33 +195,27 @@ Edite `C:\Users\SEU_USUARIO\.clawdbot\clawdbot.json` e adicione os modelos dos p
       "apiKey": "dummy",
       "api": "openai-completions",
       "models": [
-        { "id": "claude-sonnet-4-5-20250929", "name": "Claude Sonnet 4.5" },
-        { "id": "claude-opus-4-5-20251101", "name": "Claude Opus 4.5" },
-        { "id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4" },
-        { "id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5" },
-        { "id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro" },
-        { "id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash" }
+        { "id": "gemini-3-pro-preview", "name": "Gemini 3 Pro Preview" },
+        { "id": "gemini-3-flash-preview", "name": "Gemini 3 Flash Preview" },
+        { "id": "claude-sonnet-4-5-20250929", "name": "Claude Sonnet 4.5" }
       ]
     }
   }
-}
-```
-
-Configure fallbacks para trocar automaticamente se um modelo falhar:
-
-```json
+},
 "agents": {
   "defaults": {
     "model": {
-      "primary": "cliproxy/claude-sonnet-4-5-20250929",
+      "primary": "cliproxy/gemini-3-pro-preview",
       "fallbacks": [
-        "cliproxy/gemini-2.5-pro",
-        "cliproxy/claude-haiku-4-5-20251001"
+        "cliproxy/gemini-3-flash-preview",
+        "cliproxy/claude-sonnet-4-5-20250929"
       ]
     }
   }
 }
 ```
+
+> **Dica:** Use Gemini 3 como principal para economizar. Claude Sonnet 4.5 é mais caro.
 
 ### 8. Subir o Clawdbot
 
@@ -283,8 +304,10 @@ docker-compose restart
 
 | Modelo | ID | Uso recomendado |
 |--------|----|-----------------|
-| Gemini 2.5 Pro | `gemini-2.5-pro` | Tarefas complexas, contexto longo |
-| Gemini 2.5 Flash | `gemini-2.5-flash` | Respostas rapidas, fallback |
+| Gemini 3 Pro Preview | `gemini-3-pro-preview` | **Modelo padrão** - Mais econômico, alta qualidade |
+| Gemini 3 Flash Preview | `gemini-3-flash-preview` | Respostas ultrarrápidas, excelente custo-benefício |
+| Gemini 2.5 Pro | `gemini-2.5-pro` | Versão estável anterior |
+| Gemini 2.5 Flash | `gemini-2.5-flash` | Versão rápida anterior |
 
 ### Qwen (requer `--qwen-login`)
 
@@ -358,6 +381,46 @@ Se o modelo principal falhar (rate limit, erro, etc), o Clawdbot tenta o proximo
 | Rate limit | Limites compartilhados com uso no site/app. Reset a cada ~5 horas |
 | Container nao inicia | Verifique se Docker Desktop esta rodando: `docker info` |
 | Proxy nao responde | Verifique se a janela do CLIProxyAPI esta aberta e sem erros |
+
+---
+
+## Superpoderes do Container
+
+O container roda com **privilégios elevados** (`privileged: true`), permitindo que o agente instale qualquer ferramenta necessária:
+
+### Ferramentas pré-instaladas:
+
+- **Python 3.11** + pip + venv
+- **FFmpeg** - Processamento de áudio/vídeo
+- **Build tools** - gcc, make, g++ (compilar C/C++/Rust)
+- **Git** - Controle de versão
+- **Node.js 22** + npm + pnpm
+- **Utilitários** - curl, wget, jq, vim, nano, htop, zip
+
+### O agente pode instalar dinamicamente:
+
+```bash
+# Exemplo: instalar pacotes apt
+apt-get update && apt-get install -y sqlite3
+
+# Exemplo: instalar pacotes Python
+pip install requests pandas numpy
+
+# Exemplo: instalar pacotes npm globais
+npm install -g typescript
+```
+
+### Segurança
+
+**O container é isolado mesmo com privilégios:**
+
+- ✅ **Não afeta o Windows** - Container só vê Linux interno
+- ✅ **Acesso limitado** - Só pode mexer nas pastas mapeadas (`workspace`, `.clawdbot`, `.gemini`)
+- ✅ **Rede isolada** - IP próprio, não é o IP do seu PC
+- ✅ **Processos isolados** - Não aparecem no Task Manager
+- ✅ **Deletável** - `docker-compose down` remove tudo sem afetar o sistema
+
+Os privilégios permitem instalar ferramentas **dentro do container**, mas ele continua isolado do Windows.
 
 ---
 

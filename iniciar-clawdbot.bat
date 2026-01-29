@@ -31,7 +31,7 @@ if "%GATEWAY_TOKEN%"=="" (
 )
 
 echo [1/3] Iniciando CLIProxyAPI...
-start "CLIProxyAPI" /min "%USERPROFILE%\CLIProxyAPI\cli-proxy-api.exe"
+start "CLIProxyAPI" /min "%~dp0\%%USERPROFILE%%\CLIProxyAPI\cli-proxy-api.exe"
 
 echo [2/3] Aguardando proxy iniciar...
 timeout /t 4 /nobreak >nul
