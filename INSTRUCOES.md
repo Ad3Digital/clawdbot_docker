@@ -1,5 +1,7 @@
 # Guia de Uso: Clawdbot no Docker
 
+> **Atualizado:** Veja `README.md` para o passo a passo completo e mais recente.
+
 ## Configuracao Inicial (CLIProxyAPI + Claude Max)
 
 Para usar sua subscription do Claude Max em vez de pagar API separada:

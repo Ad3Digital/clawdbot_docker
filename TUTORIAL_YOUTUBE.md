@@ -1,5 +1,7 @@
 # Tutorial: Clawdbot com Subscription Claude Max (Grátis!)
 
+> **Atualizado:** Veja `README.md` para o passo a passo completo e mais recente.
+
 > Use sua assinatura do Claude Max/Pro para rodar o Clawdbot sem pagar API extra!
 
 ## O que você vai precisar

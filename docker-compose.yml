@@ -6,12 +6,12 @@ services:
     cap_add:
       - ALL  # Adiciona todas as capabilities
     volumes:
-      # Map Clawdbot configuration (Linux path for container)
-      - ${USERPROFILE}/.clawdbot:/root/.clawdbot
-      # Map Gemini CLI credentials
-      - ${USERPROFILE}/.gemini:/root/.gemini
-      # Map a workspace directory (Create this locally if it doesn't exist)
-      - ./workspace:/root/clawd
+      # Persist Clawdbot configuration (local sandbox)
+      - ./data/clawdbot:/root/.clawdbot
+      # Persist Gemini CLI credentials (local sandbox)
+      - ./data/gemini:/root/.gemini
+      # Persist workspace data (local sandbox)
+      - ./data/workspace:/root/clawd
       # Cache para apt/pip (acelera instalações)
       - apt-cache:/var/cache/apt
       - pip-cache:/root/.cache/pip

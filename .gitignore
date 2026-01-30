@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 
+# Local persistent data (bind mounts)
+data/
+
 # Keep the example
 !.env.example
 
@@ -15,5 +18,8 @@ MEMORIA_SESSAO.md
 # Windows artifacts
 nul
 
-# CLIProxyAPI binaries (should not be in repo)
+# CLIProxyAPI (downloaded binaries and local config)
+CLIProxyAPI/
+
+# Windows artifacts from old setup
 %USERPROFILE%/
