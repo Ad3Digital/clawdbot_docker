@@ -2,7 +2,7 @@ services:
   clawdbot:
     build: .
     container_name: clawdbot_sandbox
-    privileged: true  # Dá superpoderes ao container
+    privileged: true  # Necessário para watchdog processar ops-requests
     cap_add:
       - ALL  # Adiciona todas as capabilities
     volumes:
@@ -12,6 +12,8 @@ services:
       - ./data/gemini:/root/.gemini
       # Persist workspace data (local sandbox)
       - ./data/workspace:/root/clawd
+      # CLIProxyAPI OAuth credentials (compartilhado com host)
+      - ./data/cli-proxy-api:/root/.cli-proxy-api
       # Cache para apt/pip (acelera instalações)
       - apt-cache:/var/cache/apt
       - pip-cache:/root/.cache/pip
@@ -24,6 +26,7 @@ services:
       - PIP_BREAK_SYSTEM_PACKAGES=1
     ports:
       - "18789:18789"
+      - "8317:8317"  # CLIProxyAPI OAuth interface
     restart: unless-stopped
     command: clawdbot gateway --bind lan
 

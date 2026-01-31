@@ -32,15 +32,40 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     setuptools \
     wheel
 
-# Install clawdbot globally
+# Install clawdbot globally and OAuth CLIs for authentication
 RUN npm install -g clawdbot npm-check-updates pnpm
+
+# Install CLIs for OAuth authentication (Claude Code, Gemini, etc.)
+RUN npm install -g @anthropics/claude-code @google/generative-ai-cli || true
 
 # Create working directory
 WORKDIR /app
 
-# Expose Gateway port
-EXPOSE 18789
+# Download and install CLIProxyAPI (Linux version)
+RUN ARCH=$(dpkg --print-architecture) && \
+    VERSION=$(curl -s https://api.github.com/repos/router-for-me/CLIProxyAPI/releases/latest | grep '"tag_name"' | cut -d'"' -f4) && \
+    echo "Downloading CLIProxyAPI ${VERSION} for ${ARCH}..." && \
+    curl -L "https://github.com/router-for-me/CLIProxyAPI/releases/download/${VERSION}/CLIProxyAPI_${VERSION#v}_linux_${ARCH}.tar.gz" -o /tmp/cliproxy.tar.gz && \
+    tar -xzf /tmp/cliproxy.tar.gz -C /app && \
+    rm /tmp/cliproxy.tar.gz && \
+    chmod +x /app/cli-proxy-api
+
+# Copy CLIProxyAPI config
+COPY CLIProxyAPI/config.yaml /app/config.yaml
+
+# Copy OAuth credentials if they exist (from host user directory)
+# This will be mounted as volume in docker-compose instead
+# RUN mkdir -p /root/.cli-proxy-api
+
+# Copy entrypoint and watchdog scripts
+COPY entrypoint.sh /app/entrypoint.sh
+COPY watchdog.sh /app/watchdog.sh
+RUN chmod +x /app/entrypoint.sh /app/watchdog.sh
+
+# Expose Gateway port and CLIProxyAPI port
+EXPOSE 18789 8317
 
 # Set entrypoint
-CMD ["clawdbot", "gateway"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["clawdbot", "gateway", "--bind", "lan"]
 
