@@ -32,6 +32,10 @@ services:
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=graphitipass
       - GRAPHITI_PORT=8001
+      # LLM Configuration - Use CLIProxyAPI
+      - OPENAI_API_KEY=dummy-key-for-cliproxy
+      - OPENAI_BASE_URL=http://clawdbot:8317/v1
+      - LLM_MODEL=claude-sonnet-4-5-20250929
     ports:
       - "8001:8001"
     volumes:
@@ -43,9 +47,11 @@ services:
     restart: unless-stopped
     command: >
       bash -c "
+      apt-get update && apt-get install -y curl &&
       pip install --no-cache-dir graphiti-core[neo4j] fastapi uvicorn &&
       if [ ! -f /app/server.py ]; then
-        echo 'Graphiti server.py will be created on first run';
+        echo 'Error: Graphiti server.py not found!';
+        exit 1;
       fi &&
       python /app/server.py
       "

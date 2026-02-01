@@ -11,12 +11,18 @@ from pydantic import BaseModel
 import uvicorn
 from graphiti_core import Graphiti
 from graphiti_core.nodes import EpisodeType
+from graphiti_core.llm_client import OpenAIClient, LLMConfig
 
 # Configuration from environment
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "graphitipass")
 PORT = int(os.getenv("GRAPHITI_PORT", "8001"))
+
+# LLM Configuration - Use CLIProxyAPI or OpenAI
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "dummy-key-for-cliproxy")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "http://clawdbot:8317/v1")
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-4-5-20250929")
 
 # Initialize FastAPI
 app = FastAPI(
@@ -33,10 +39,27 @@ async def startup_event():
     """Initialize Graphiti connection on startup"""
     global graphiti
     try:
-        graphiti = Graphiti(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+        # Configure LLM to use CLIProxyAPI
+        llm_config = LLMConfig(
+            api_key=OPENAI_API_KEY,
+            base_url=OPENAI_BASE_URL,
+            model=LLM_MODEL
+        )
+
+        llm_client = OpenAIClient(config=llm_config)
+
+        graphiti = Graphiti(
+            NEO4J_URI,
+            NEO4J_USER,
+            NEO4J_PASSWORD,
+            llm_client=llm_client
+        )
         print(f"✓ Connected to Neo4j at {NEO4J_URI}")
+        print(f"✓ Using LLM: {LLM_MODEL} via {OPENAI_BASE_URL}")
     except Exception as e:
-        print(f"✗ Failed to connect to Neo4j: {e}")
+        print(f"✗ Failed to initialize Graphiti: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 @app.on_event("shutdown")
@@ -84,21 +107,15 @@ async def health_check():
 async def add_episode(episode: Episode):
     """Add a new episode to the knowledge graph"""
     if not graphiti:
-        raise HTTPException(status_code=503, message="Graphiti not initialized")
+        raise HTTPException(status_code=503, detail="Graphiti not initialized")
 
     try:
-        # Convert episode type string to enum
-        ep_type = EpisodeType.message
-        if episode.episode_type.lower() == "json":
-            ep_type = EpisodeType.json
-
         # Add episode to graph
         await graphiti.add_episode(
             name=episode.name,
             episode_body=episode.episode_body,
             source_description=episode.source_description,
-            reference_time=episode.reference_time or datetime.now(),
-            episode_type=ep_type
+            reference_time=episode.reference_time or datetime.now()
         )
 
         return {
@@ -106,6 +123,8 @@ async def add_episode(episode: Episode):
             "message": f"Episode '{episode.name}' added successfully"
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/search")
