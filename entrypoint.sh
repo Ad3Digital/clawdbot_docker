@@ -27,6 +27,17 @@ else
     echo "[ENTRYPOINT] WARNING: cli-proxy-api binary not found!"
 fi
 
+echo "[ENTRYPOINT] Starting Xvfb (virtual X server for screenshots/browser)..."
+if command -v Xvfb > /dev/null 2>&1; then
+    Xvfb :99 -screen 0 1920x1080x24 > /tmp/xvfb.log 2>&1 &
+    XVFB_PID=$!
+    export DISPLAY=:99
+    echo "[ENTRYPOINT] Xvfb started (PID: $XVFB_PID, DISPLAY=:99)"
+    sleep 2
+else
+    echo "[ENTRYPOINT] WARNING: Xvfb not available, screenshots may not work"
+fi
+
 echo "[ENTRYPOINT] Starting internal watchdog..."
 if [ -f /app/watchdog.sh ]; then
     /app/watchdog.sh > /tmp/watchdog.log 2>&1 &

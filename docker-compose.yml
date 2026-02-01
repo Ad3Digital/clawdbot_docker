@@ -28,6 +28,12 @@ services:
       - "18789:18789"
       - "8317:8317"  # CLIProxyAPI OAuth interface
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'clawdbot-gateway' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     command: clawdbot gateway --bind lan
 
 volumes:

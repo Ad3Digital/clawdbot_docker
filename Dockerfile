@@ -21,6 +21,12 @@ RUN apt-get update && apt-get install -y \
     htop \
     net-tools \
     iputils-ping \
+    imagemagick \
+    scrot \
+    x11-apps \
+    xvfb \
+    chromium \
+    chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 
 # Give root passwordless sudo (já é root, mas garante compatibilidade)
@@ -32,8 +38,10 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     setuptools \
     wheel
 
-# Install clawdbot globally and OAuth CLIs for authentication
-RUN npm install -g clawdbot npm-check-updates pnpm
+# Install clawdbot globally (latest version) and OAuth CLIs for authentication
+# Note: Installing from git to get latest features (v2026.1.30+)
+RUN npm install -g git+https://github.com/openclaw/openclaw.git#v2026.1.30 npm-check-updates pnpm || \
+    npm install -g clawdbot@latest npm-check-updates pnpm
 
 # Install CLIs for OAuth authentication (Claude Code, Gemini, etc.)
 RUN npm install -g @anthropics/claude-code @google/generative-ai-cli || true
